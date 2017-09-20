@@ -430,7 +430,7 @@ class MultiHeadDotAttention(Attention):
             query = mx.sym.reshape(query, shape=(-3, self.num_hidden_per_head, 1))
 
             # scale dot product
-            query = query * self.num_hidden_per_head ** -0.5
+            query = query * (self.num_hidden_per_head ** -0.5)
 
             # (batch*heads, length, num_hidden/head) X (batch*heads, num_hidden/head, 1)
             #   -> (batch*heads, length, 1)
