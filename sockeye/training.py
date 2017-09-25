@@ -98,7 +98,8 @@ class TrainingModel(model.SockeyeModel):
         source_length = utils.compute_lengths(source)
         target = mx.sym.Variable(C.TARGET_NAME)
         target_length = utils.compute_lengths(target)
-        labels = mx.sym.reshape(data=mx.sym.Variable(C.TARGET_LABEL_NAME), shape=(-1,))
+        #labels = mx.sym.reshape(data=mx.sym.Variable(C.TARGET_LABEL_NAME), shape=(-1,))
+        labels = mx.sym.Variable(C.TARGET_LABEL_NAME)
 
         model_loss = loss.get_loss(self.config.config_loss)
 
@@ -121,7 +122,7 @@ class TrainingModel(model.SockeyeModel):
             logits = self.decoder.decode_sequence(source_encoded, source_encoded_length, source_encoded_seq_len, target,
                                                   target_length, target_seq_len, source_lexicon)
 
-            outputs = model_loss.get_loss(logits, labels)
+            outputs = model_loss.get_loss(logits, labels, target_seq_len)
 
             return mx.sym.Group(outputs), data_names, label_names
 
@@ -324,6 +325,7 @@ class TrainingModel(model.SockeyeModel):
 
             # process batch
             batch = next_data_batch
+
 
             if mxmonitor is not None:
                 mxmonitor.tic()

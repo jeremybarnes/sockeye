@@ -82,7 +82,7 @@ class Decoder(ABC):
         :param source_lexicon: Lexical biases for current sentence.
                Shape: (batch_size, target_vocab_size, source_seq_len)
         :return: Logits of next-word predictions for target sequence.
-                 Shape: (batch_size * target_max_length, target_vocab_size)
+                 Shape: (batch_size, target_max_length, target_vocab_size)
         """
         pass
 
@@ -238,7 +238,7 @@ class TransformerDecoder(Decoder):
         :param source_lexicon: Lexical biases for current sentence.
                Shape: (batch_size, target_vocab_size, source_seq_len)
         :return: Logits of next-word predictions for target sequence.
-                 Shape: (batch_size * target_max_length, target_vocab_size)
+                 Shape: (batch_size, target_max_length, target_vocab_size)
         """
         # (1, target_max_length, target_max_length)
         target_bias = transformer.get_autoregressive_bias(target_max_length, name="%sbias" % self.prefix)
@@ -260,7 +260,13 @@ class TransformerDecoder(Decoder):
 
         # logits: (batch_size * target_max_length, vocab_size)
         logits = mx.sym.FullyConnected(data=target, num_hidden=self.config.vocab_size,
-                                       weight=self.cls_w, bias=self.cls_b, name=C.LOGITS_NAME)
+                                       weight=self.cls_w, bias=self.cls_b, name=C.LOGITS_NAME + "_flat")
+
+        # logits: (batch_size, target_max_length, vocab_size
+        # TODO(fhieber): Temporary fix for 0.11.1 which is more strict w.r.t batch axis being batch_size only.
+        # TODO(fhieber): Remove reshapes when fully updated to 0.11.1
+        logits = mx.sym.reshape(data=logits, shape=(-1, target_max_length, self.config.vocab_size), name=C.LOGITS_NAME)
+
         return logits
 
     def decode_step(self,
@@ -546,7 +552,7 @@ class RecurrentDecoder(Decoder):
         :param source_lexicon: Lexical biases for current sentence.
                Shape: (batch_size, target_vocab_size, source_seq_len)
         :return: Logits of next-word predictions for target sequence.
-                 Shape: (batch_size * target_max_length, target_vocab_size)
+                 Shape: (batch_size, target_max_length, target_vocab_size)
         """
         # embed and slice target words
         # target_embed: (batch_size, target_seq_len, num_target_embed)
@@ -598,13 +604,16 @@ class RecurrentDecoder(Decoder):
 
         # logits: (batch_size * target_seq_len, target_vocab_size)
         logits = mx.sym.FullyConnected(data=hidden_concat, num_hidden=self.config.vocab_size,
-                                       weight=self.cls_w, bias=self.cls_b, name=C.LOGITS_NAME)
+                                       weight=self.cls_w, bias=self.cls_b, name=C.LOGITS_NAME + "_flat")
+
+        # logits: (batch_size, target_max_length, vocab_size
+        # TODO(fhieber): Temporary fix for 0.11.1 which is more strict w.r.t batch axis being batch_size only.
+        # TODO(fhieber): Remove reshapes when fully updated to 0.11.1
+        logits = mx.sym.reshape(data=logits, shape=(-1, target_max_length, self.config.vocab_size), name=C.LOGITS_NAME)
 
         if source_lexicon is not None:
             # lexical_biases_concat: (batch_size, target_seq_len, target_vocab_size)
             lexical_biases_concat = mx.sym.concat(*lexical_biases, dim=1, name='lex_bias_concat')
-            # lexical_biases_concat: (batch_size * target_seq_len, target_vocab_size)
-            lexical_biases_concat = mx.sym.reshape(data=lexical_biases_concat, shape=(-1, self.config.vocab_size))
             logits = mx.sym.broadcast_add(lhs=logits, rhs=lexical_biases_concat,
                                           name='%s_plus_lex_bias' % C.LOGITS_NAME)
 
