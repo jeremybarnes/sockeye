@@ -202,11 +202,11 @@ class SmoothedCrossEntropyLoss(Loss):
         # labels: (batch_size * length,)
         labels = mx.sym.reshape(labels, shape=(-1,))
 
-        on_value = 1.0 - self._alpha
-        off_value = self._alpha / (self._vocab_size - 1.0)
+        on_value = 1.0 - self.loss_config.smoothed_cross_entropy_alpha
+        off_value = self.loss_config.smoothed_cross_entropy_alpha / (self.loss_config.vocab_size - 1.0)
         # cross_entropy: (batch_size * length, vocab_size)
         cross_entropy = mx.sym.one_hot(indices=mx.sym.cast(labels, dtype='int32'),
-                                       depth=self._vocab_size,
+                                       depth=self.loss_config.vocab_size,
                                        on_value=on_value,
                                        off_value=off_value)
 
@@ -214,7 +214,7 @@ class SmoothedCrossEntropyLoss(Loss):
         cross_entropy = mx.sym.where(labels, cross_entropy, mx.sym.zeros((0, self.loss_config.vocab_size)))
 
         # compute cross_entropy
-        cross_entropy = cross_entropy * (- mx.sym.log(data=mx.sym.reshape(probs, shape=(-1, self._vocab_size)) + 1e-10))
+        cross_entropy = cross_entropy * (- mx.sym.log(data=mx.sym.reshape(probs, shape=(-1, self.loss_config.vocab_size)) + 1e-10))
         cross_entropy = mx.sym.sum(data=cross_entropy, axis=1)
 
         if self.loss_config.normalize:

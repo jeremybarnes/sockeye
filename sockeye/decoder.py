@@ -1080,6 +1080,11 @@ class ConvolutionalDecoder(Decoder):
         logits = mx.sym.FullyConnected(data=target_hidden, num_hidden=self.config.vocab_size,
                                        weight=self.cls_w, bias=self.cls_b, name=C.LOGITS_NAME)
 
+        # logits: (batch_size, target_max_length, vocab_size
+        # TODO(fhieber): Temporary fix for 0.11.1 which is more strict w.r.t batch axis being batch_size only.
+        # TODO(fhieber): Remove reshapes when fully updated to 0.11.1
+        logits = mx.sym.reshape(data=logits, shape=(-1, target_max_length, self.config.vocab_size), name=C.LOGITS_NAME)
+
         return logits
 
     def _decode(self,
