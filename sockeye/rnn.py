@@ -420,7 +420,6 @@ class LayerNormGRUCell(mx.rnn.GRUCell):
         next_h_tmp = mx.sym.Activation(i2h + reset_gate * h2h, act_type="tanh",
                                        name="%s_h_act" % name)
 
-        System.exit(123)
         next_h = mx.sym._internal._plus((1. - update_gate).astype('float16') * next_h_tmp, update_gate * prev_state_h,
                                         name='%sout' % name)
 
@@ -483,7 +482,6 @@ class LayerNormPerGateGRUCell(mx.rnn.GRUCell):
         next_h_tmp = mx.sym.Activation(self._norm_layers[2].normalize(i2h + reset_gate * h2h),
                                        act_type="tanh", name="%s_h_act" % name)
 
-        System.exit(124)
         next_h = mx.sym._internal._plus((1. - update_gate).astype('float16') * next_h_tmp, update_gate * prev_state_h,
                                         name='%sout' % name)
 

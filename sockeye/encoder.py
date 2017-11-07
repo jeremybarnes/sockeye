@@ -809,7 +809,7 @@ class ConvolutionalEncoder(Encoder):
 
         # Multiple layers with residual connections:
         for layer in self.layers:
-            data = mx.sym.identity(data + layer(data, data_length, seq_len), "encoder call convolution")
+            data = data + layer(data, data_length, seq_len)
         return data, data_length, seq_len
 
     def get_num_hidden(self) -> int:

@@ -789,7 +789,6 @@ class RecurrentDecoder(Decoder):
         source_masked = mx.sym.SequenceMask(data=source_encoded,
                                             sequence_length=source_encoded_length,
                                             use_sequence_length=True,
-                                            dtype='float16',
                                             value=0.) if self.config.state_init == C.RNN_DEC_INIT_AVG else None
         
         # decoder hidden state
@@ -918,7 +917,6 @@ class RecurrentDecoder(Decoder):
                                                bias=self.mapped_context_b,
                                                name="%smapped_context_fc_t%d" % (self.prefix, seq_idx))
 
-        System.exit(123)
         hidden = gate * mapped_rnn_output + (1 - gate) * mapped_context
 
         if self.config.layer_normalization:
@@ -1123,6 +1121,7 @@ class ConvolutionalDecoder(Decoder):
                                            length=source_encoded_lengths)
 
             # residual connection:
+            #target_hidden = target_hidden_prev + target_hidden + context
             target_hidden = mx.sym._internal._plus(target_hidden_prev.astype('float16'), target_hidden.astype('float16'), name="bonus1")
             target_hidden = mx.sym._internal._plus(target_hidden, context.astype('float16'))
             #target_hidden = target_hidden_prev.astype('float16') + target_hidden.astype('float16') + context.astype('float16')
@@ -1202,7 +1201,7 @@ class ConvolutionalDecoder(Decoder):
                                                 keys=source_encoded, values=source_encoded,
                                                 length=source_encoded_lengths)
             # residual connection:
-            target_hidden_step = target_hidden_step_prev #target_hidden_step_prev.astype('float16') + target_hidden_step.astype('float16') + context_step.astype('float16')
+            target_hidden_step = target_hidden_step_prev.astype('float16') + target_hidden_step.astype('float16') + context_step.astype('float16')
             target_hidden_step_prev = target_hidden_step
 
             if layer_state is not None:

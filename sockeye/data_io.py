@@ -450,7 +450,7 @@ class ParallelBucketSentenceIter(mx.io.DataIter):
         self.eos_id = eos_id
         self.pad_id = pad_id
         self.unk_id = unk_id
-        self.dtype = 'float16' #dtype
+        self.dtype = dtype
         self.source_data_name = source_data_name
         self.target_data_name = target_data_name
         self.label_name = label_name

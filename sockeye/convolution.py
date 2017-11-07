@@ -131,7 +131,7 @@ class ConvolutionBlock:
         if self.pad_type == C.CNN_PAD_LEFT:
             data_conv = mx.sym.slice_axis(data=data_conv, axis=2, begin=0, end=seq_len)
 
-        return mx.sym.identity(self._post_convolution(data_conv), name="convolution_block_call")
+        return self._post_convolution(data_conv)
 
     def step(self, data):
         """
@@ -159,7 +159,7 @@ class ConvolutionBlock:
                                           num_hidden=num_hidden)
         # (batch_size, num_hidden, 1)
         data_conv = mx.sym.expand_dims(data_conv, axis=2)
-        return mx.sym.identity(self._post_convolution(data_conv), name="conv_step")
+        return self._post_convolution(data_conv)
 
     def _post_convolution(self, data_conv):
         # data_conv: (batch_size, pre_activation_num_hidden, seq_len)
@@ -179,5 +179,5 @@ class ConvolutionBlock:
 
         # (batch_size, seq_len, num_hidden)
         block_output = mx.sym.swapaxes(block_output, dim1=1, dim2=2, name='sa3')
-        return mx.sym.identity(block_output, name="post_conv_output")
+        return block_output
 
