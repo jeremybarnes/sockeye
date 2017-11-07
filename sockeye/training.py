@@ -136,6 +136,11 @@ class TrainingModel(model.SockeyeModel):
             logger.info("No bucketing. Unrolled to (%d,%d)",
                         self.config.max_seq_len_source, self.config.max_seq_len_target)
             symbol, _, __ = sym_gen(train_iter.buckets[0])
+
+            #print('symbol')
+            #print(symbol.tojson())
+            
+
             return mx.mod.Module(symbol=symbol,
                                  data_names=data_names,
                                  label_names=label_names,
@@ -316,6 +321,8 @@ class TrainingModel(model.SockeyeModel):
         :param lr_decay_param_reset: Reset parameters to previous best after learning rate decay.
         :param lr_decay_opt_states_reset: How to reset optimizer states after learning rate decay.
         """
+        #print("FFFFIIIIIIIIITTTTTTTTTTTTTT")
+
         # TODO: Push update to MXNet to expose the optimizer (Module should have a get_optimizer method)
         optimizer = self.module._curr_module._optimizer if self.bucketing else self.module._optimizer
         if lr_decay_opt_states_reset == C.LR_DECAY_OPT_STATES_RESET_INITIAL:
@@ -349,7 +356,8 @@ class TrainingModel(model.SockeyeModel):
             )
 
         next_data_batch = train_iter.next()
-
+        #print(type(train_iter))
+        
         while max_updates == -1 or train_state.updates < max_updates:
             if not train_iter.iter_next():
                 train_state.epoch += 1
@@ -358,9 +366,17 @@ class TrainingModel(model.SockeyeModel):
             # process batch
             batch = next_data_batch
 
+            #print(batch)
+            #print(batch.provide_data)
+            #print(type(batch))
+
+        
             if mxmonitor is not None:
                 mxmonitor.tic()
 
+            #print('symbol')
+            #print(self.module.symbol.tojson())
+                
             # Forward-backward to get outputs, gradients
             self.module.forward_backward(batch)
 

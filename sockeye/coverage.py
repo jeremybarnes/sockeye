@@ -314,6 +314,6 @@ def mask_coverage(coverage: mx.sym.Symbol, source_length: mx.sym.Symbol) -> mx.s
     :return: Masked coverage vector. Shape: (batch_size, seq_len, coverage_num_hidden).
     """
     coverage = mx.sym.SwapAxis(data=coverage, dim1=0, dim2=1)
-    coverage = mx.sym.SequenceMask(data=coverage, use_sequence_length=True, sequence_length=source_length)
+    coverage = mx.sym.SequenceMask(data=coverage, use_sequence_length=True, sequence_length=source_length, value=0., dtype='float16')
     coverage = mx.sym.SwapAxis(data=coverage, dim1=0, dim2=1)
     return coverage

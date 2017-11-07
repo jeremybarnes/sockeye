@@ -137,7 +137,8 @@ def compute_lengths(sequence_data: mx.sym.Symbol) -> mx.sym.Symbol:
     :param sequence_data: Input data. Shape: (batch_size, seq_len).
     :return: Length data. Shape: (batch_size,).
     """
-    return mx.sym.sum(mx.sym.broadcast_not_equal(sequence_data, mx.sym.zeros((1,))), axis=1)
+    print("compute_lengths", sequence_data)
+    return mx.sym.sum(mx.sym.broadcast_not_equal(mx.sym.identity(sequence_data.astype('float16'), name="compute_lengths"), mx.sym.zeros((1,),dtype='float16')), axis=1).astype('float16')
 
 
 def save_params(arg_params: Mapping[str, mx.nd.NDArray], fname: str,

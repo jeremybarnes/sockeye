@@ -231,7 +231,7 @@ class TransformerProcessBlock:
         for step in self.sequence:
 
             if step == "r":
-                data = mx.sym._internal._plus(data, prev, name="%sresidual" % self.prefix)
+                data = data #mx.sym._internal._plus(data, prev, name="%sresidual" % self.prefix)
 
             elif step == "n":
                 data = self._reshape_and_normalize(data, length)

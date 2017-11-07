@@ -438,7 +438,7 @@ class ParallelBucketSentenceIter(mx.io.DataIter):
                  source_data_name=C.SOURCE_NAME,
                  target_data_name=C.TARGET_NAME,
                  label_name=C.TARGET_LABEL_NAME,
-                 dtype='float32') -> None:
+                 dtype='float16') -> None:
         super(ParallelBucketSentenceIter, self).__init__()
 
         self.buckets = list(buckets)
@@ -450,7 +450,7 @@ class ParallelBucketSentenceIter(mx.io.DataIter):
         self.eos_id = eos_id
         self.pad_id = pad_id
         self.unk_id = unk_id
-        self.dtype = dtype
+        self.dtype = 'float16' #dtype
         self.source_data_name = source_data_name
         self.target_data_name = target_data_name
         self.label_name = label_name
@@ -479,16 +479,20 @@ class ParallelBucketSentenceIter(mx.io.DataIter):
         # other parts of the model, but it is possible that some architectures will have intermediate
         # operations that produce shapes larger than the default bucket size.  In these cases, MXNet
         # will silently allocate additional memory.
+        print("provide_data")
         self.provide_data = [
             mx.io.DataDesc(name=source_data_name,
                            shape=(self.bucket_batch_sizes[-1].batch_size, self.default_bucket_key[0]),
+                           dtype=self.dtype,
                            layout=C.BATCH_MAJOR),
             mx.io.DataDesc(name=target_data_name,
                            shape=(self.bucket_batch_sizes[-1].batch_size, self.default_bucket_key[1]),
+                           dtype=self.dtype,
                            layout=C.BATCH_MAJOR)]
         self.provide_label = [
             mx.io.DataDesc(name=label_name,
                            shape=(self.bucket_batch_sizes[-1].batch_size, self.default_bucket_key[1]),
+                           dtype=self.dtype,
                            layout=C.BATCH_MAJOR)]
 
         self.data_names = [self.source_data_name, self.target_data_name]
@@ -705,9 +709,9 @@ class ParallelBucketSentenceIter(mx.io.DataIter):
         # target shifted by one and eos_id appended
         label = [mx.nd.concat(target[:, 1:], mx.nd.full((target.shape[0], 1), val=self.eos_id, dtype=self.dtype))]
 
-        provide_data = [mx.io.DataDesc(name=n, shape=x.shape, layout=C.BATCH_MAJOR) for n, x in
+        provide_data = [mx.io.DataDesc(name=n, shape=x.shape, layout=C.BATCH_MAJOR, dtype=self.dtype) for n, x in
                         zip(self.data_names, data)]
-        provide_label = [mx.io.DataDesc(name=n, shape=x.shape, layout=C.BATCH_MAJOR) for n, x in
+        provide_label = [mx.io.DataDesc(name=n, shape=x.shape, layout=C.BATCH_MAJOR, dtype=self.dtype) for n, x in
                          zip(self.label_names, label)]
 
         # TODO: num pad examples is not set here if fillup strategy would be padding

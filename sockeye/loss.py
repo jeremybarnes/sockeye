@@ -115,7 +115,7 @@ class CrossEntropyLoss(Loss):
         else:
             raise ValueError("Unknown loss normalization type: %s" % self.loss_config.normalization_type)
         return [mx.sym.SoftmaxOutput(data=logits,
-                                     label=labels,
+                                     label=labels.astype('float16'),
                                      ignore_label=C.PAD_ID,
                                      use_ignore=True,
                                      normalization=normalization,

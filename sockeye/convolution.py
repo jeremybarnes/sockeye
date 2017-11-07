@@ -114,11 +114,11 @@ class ConvolutionBlock:
         # Apply masking (so that we properly have zero padding for variable sequence length batches)
         # Note: SequenceMask expects time-major data
         # (seq_len, batch_size, num_hidden)
-        data = mx.sym.swapaxes(data, dim1=0, dim2=1)
-        data = mx.sym.SequenceMask(data=data, sequence_length=data_length, use_sequence_length=True, value=0)
+        data = mx.sym.swapaxes(data, dim1=0, dim2=1, name='sa1')
+        data = mx.sym.SequenceMask(data=data.astype('float16'), sequence_length=data_length.astype('float16'), use_sequence_length=True, value=0.)
 
         # (batch_size,  num_hidden, seq_len)
-        data = mx.sym.transpose(data, axes=(1, 2, 0))
+        data = mx.sym.transpose(data, axes=(1, 2, 0)).astype('float16')
         data_conv = mx.sym.Convolution(data=data,
                                        weight=self.conv_weight,
                                        bias=self.conv_bias,
@@ -131,7 +131,7 @@ class ConvolutionBlock:
         if self.pad_type == C.CNN_PAD_LEFT:
             data_conv = mx.sym.slice_axis(data=data_conv, axis=2, begin=0, end=seq_len)
 
-        return self._post_convolution(data_conv)
+        return mx.sym.identity(self._post_convolution(data_conv), name="convolution_block_call")
 
     def step(self, data):
         """
@@ -148,7 +148,7 @@ class ConvolutionBlock:
         num_hidden = self._pre_activation_num_hidden()
 
         # (batch_size, num_hidden, kernel_width)
-        data = mx.sym.swapaxes(data, dim1=1, dim2=2)
+        data = mx.sym.swapaxes(data, dim1=1, dim2=2, name='sa2')
         # (batch_size, num_hidden * kernel_width)
         data = mx.sym.reshape(data, shape=(0, -3))
         # (preact_num_hidden, num_hidden * kernel_width)
@@ -159,7 +159,7 @@ class ConvolutionBlock:
                                           num_hidden=num_hidden)
         # (batch_size, num_hidden, 1)
         data_conv = mx.sym.expand_dims(data_conv, axis=2)
-        return self._post_convolution(data_conv)
+        return mx.sym.identity(self._post_convolution(data_conv), name="conv_step")
 
     def _post_convolution(self, data_conv):
         # data_conv: (batch_size, pre_activation_num_hidden, seq_len)
@@ -178,6 +178,6 @@ class ConvolutionBlock:
             block_output = mx.sym.Activation(data_conv, act_type=self.config.act_type)
 
         # (batch_size, seq_len, num_hidden)
-        block_output = mx.sym.swapaxes(block_output, dim1=1, dim2=2)
-        return block_output
+        block_output = mx.sym.swapaxes(block_output, dim1=1, dim2=2, name='sa3')
+        return mx.sym.identity(block_output, name="post_conv_output")
 

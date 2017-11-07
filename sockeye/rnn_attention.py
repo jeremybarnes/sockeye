@@ -247,7 +247,7 @@ class BilinearAttention(Attention):
 
             # in:  (batch_size, source_seq_len, self.num_hidden) X (batch_size, self.num_hidden, 1)
             # out: (batch_size, source_seq_len, 1).
-            attention_scores = mx.sym.batch_dot(lhs=source_hidden, rhs=query, name="%sbatch_dot" % self.prefix)
+            attention_scores = mx.sym.batch_dot(lhs=source_hidden.astype('float32'), rhs=query.astype('float32'), name="%sbatch_dot" % self.prefix).astype('float16')
 
             context, attention_probs = get_context_and_attention_probs(source, source_length, attention_scores)
 
@@ -339,8 +339,8 @@ class DotAttention(Attention):
 
             # batch_dot: (batch, M, K) X (batch, K, N) –> (batch, M, N).
             # (batch_size, seq_len, 1)
-            attention_scores = mx.sym.batch_dot(lhs=source_hidden, rhs=expanded_decoder_state,
-                                                name="%sbatch_dot" % self.prefix)
+            attention_scores = mx.sym.batch_dot(lhs=source_hidden.astype('float32'), rhs=expanded_decoder_state.astype('float32'),
+                                                name="%sbatch_dot" % self.prefix).astype('float16')
 
             context, attention_probs = get_context_and_attention_probs(source, source_length, attention_scores)
             return AttentionState(context=context,
@@ -428,7 +428,7 @@ class MultiHeadDotAttention(Attention):
 
             # (batch*heads, length, num_hidden/head) X (batch*heads, num_hidden/head, 1)
             #   -> (batch*heads, length, 1)
-            attention_scores = mx.sym.batch_dot(lhs=keys, rhs=query, name="%sdot" % self.prefix)
+            attention_scores = mx.sym.batch_dot(lhs=keys.astype('float32'), rhs=query.astype('float32'), name="%sdot" % self.prefix).astype('float16')
 
             # (batch*heads, 1)
             lengths = layers.broadcast_to_heads(source_length, self.heads)
@@ -740,7 +740,7 @@ def get_context_and_attention_probs(values: mx.sym.Symbol,
 
     # batch_dot: (batch, M, K) X (batch, K, N) –> (batch, M, N).
     # (batch_size, seq_len, num_hidden) X (batch_size, seq_len, 1) -> (batch_size, num_hidden, 1)
-    context = mx.sym.batch_dot(lhs=values, rhs=probs, transpose_a=True)
+    context = mx.sym.batch_dot(lhs=values.astype('float32'), rhs=probs.astype('float32'), transpose_a=True).astype('float16')
     # (batch_size, encoder_num_hidden, 1)-> (batch_size, encoder_num_hidden)
     context = mx.sym.reshape(data=context, shape=(0, 0))
     probs = mx.sym.reshape(data=probs, shape=(0, 0))

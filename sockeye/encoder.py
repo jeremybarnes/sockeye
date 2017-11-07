@@ -801,7 +801,7 @@ class ConvolutionalEncoder(Encoder):
         :return: Encoded version of the data.
         """
         # data: (batch_size, seq_len, num_hidden)
-        data = mx.sym.FullyConnected(data=data,
+        data = mx.sym.FullyConnected(data=data.astype('float16'),
                                      num_hidden=self.config.cnn_config.num_hidden,
                                      no_bias=True,
                                      flatten=False,
@@ -809,7 +809,7 @@ class ConvolutionalEncoder(Encoder):
 
         # Multiple layers with residual connections:
         for layer in self.layers:
-            data = data + layer(data, data_length, seq_len)
+            data = mx.sym.identity(data + layer(data, data_length, seq_len), "encoder call convolution")
         return data, data_length, seq_len
 
     def get_num_hidden(self) -> int:
@@ -1008,7 +1008,7 @@ class ConvolutionalEmbeddingEncoder(Encoder):
         pool = mx.sym.reshape(data=pool,
                               shape=(-1, total_num_filters, encoded_seq_len))
         # (batch_size, seq_len/stride, total_num_filters)
-        pool = mx.sym.swapaxes(data=pool, dim1=1, dim2=2)
+        pool = mx.sym.swapaxes(data=pool, dim1=1, dim2=2, name='sa4')
         if self.dropout > 0:
             pool = mx.sym.Dropout(data=pool, p=self.dropout)
 

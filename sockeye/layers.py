@@ -240,7 +240,7 @@ def dot_attention(queries: mx.sym.Symbol,
     :return: 'Context' vectors for each query. Shape: (n, lq, dv).
     """
     # (n, lq, lk)
-    logits = mx.sym.batch_dot(lhs=queries, rhs=keys, transpose_b=True)
+    logits = mx.sym.batch_dot(lhs=queries.astype('float32'), rhs=keys.astype('float32'), transpose_b=True).astype('float16')
 
     # mask lk dimension
     # (lk, n, lq)
@@ -255,11 +255,11 @@ def dot_attention(queries: mx.sym.Symbol,
     if bias is not None:
         logits = mx.sym.broadcast_add(logits, bias)
 
-    probs = mx.sym.softmax(logits, axis=-1)
+    probs = mx.sym.softmax(logits, axis=-1, name='dot_attention')
     probs = mx.sym.Dropout(probs, p=dropout) if dropout > 0.0 else probs
 
     # (n, lq, lk) x (n, lk, dv) -> (n, lq, dv)
-    return mx.sym.batch_dot(lhs=probs, rhs=values)
+    return mx.sym.batch_dot(lhs=probs.astype('float32'), rhs=values.astype('float32')).astype('float16')
 
 
 class MultiHeadAttentionBase:
@@ -506,7 +506,8 @@ class PositionalEncodingsProp(mx.operator.CustomOpProp):
         return [], [(1, self.length, self.depth)], []
 
     def infer_type(self, in_type):
-        return [], [np.float32], []
+        return [], [np.float16], []
 
     def create_operator(self, ctx, shapes, dtypes):
         return PositionalEncodings(length=self.length, depth=self.depth)
+
